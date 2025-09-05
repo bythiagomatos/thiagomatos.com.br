@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function Loader({ onDone, imageUrl = "/THIAGO-MATOS.jpeg" }) {
+export default function Loader({ onDone, imageUrl = `${import.meta.env.BASE_URL}THIAGO-MATOS.jpeg`}) { 
   const [pct, setPct] = useState(0);
   const [phase, setPhase] = useState("intro"); // intro -> out -> done
 

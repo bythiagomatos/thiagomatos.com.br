@@ -1,7 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Link, useParams, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import Tilt from "react-parallax-tilt";
 import { useState } from "react";
 import Loader from "./Loader.jsx";
 
@@ -586,7 +585,7 @@ function Awards() {
   const flatAwards = PROJECTS.flatMap((p) => p.awards?.map((a) => ({ a, p })) || []);
   return (
     <Page>
-      <motion.h1 {...fade} className="text-5xl md:text-7xl font-black tracking-tight mb-8">Awards</motion.h1>
+      <motion.h1 {...fade} className="text-5xl md:text-7xl font-black tracking-tight mb-8">Award</motion.h1>
       {flatAwards.length ? (
         <ul className="space-y-3">
           {flatAwards.map((row, i) => (
@@ -635,7 +634,7 @@ export default function App() {
   if (!ready) return <Loader onDone={() => setReady(true)} />;
   
   return (
-    <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/work/:slug" element={<WorkDetail />} />
