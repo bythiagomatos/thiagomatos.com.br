@@ -6,10 +6,10 @@ html { color-scheme: dark; }
 
 .textIntro {
   opacity: 0;
-  animation: textIntro 0.5s var(--easing1) forwards;
+  animation: textIntro 0.5s var(--easing1) both;
 }
 .textOutro {
-  animation: textOutro 1s var(--easing2) forwards;
+  animation: textOutro 1s var(--easing2) both;
 }
 .delay-400 { animation-delay: 400ms !important; }
 .delay-500 { animation-delay: 500ms !important; }

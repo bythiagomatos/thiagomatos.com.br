@@ -2,11 +2,12 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Link, useParams, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { useEffect, useRef } from "react";
 import Loader from "./Loader.jsx";
 
 
 /**
- * Rick-style Portfolio (single-file React app)
+ * Meu Portfolio ( SPA Single file React app)
  * --------------------------------------------------
  * • Home = masonry-like grid of works
  * • Clicking a work opens a beautiful case page (hero + sections)
@@ -21,17 +22,20 @@ import Loader from "./Loader.jsx";
 
 const PROJECTS = [
   {
-    id: "coupon-rain",
-    slug: "coupon-rain",
-    client: "Mercado Livre",
-    title: "COUPON RAIN*",
+    id: "Batata, Óleo e Sal",
+    slug: "Batata, Óleo e Sal",
+    client: "Lay's",
+    title: "BATATA, ÓLEO E SAL*",
     tagline:
       "Turning every victory photo into a discount hunt — hiding coupon codes inside the confetti.",
     year: 2024,
+    coverPoster: `${import.meta.env.BASE_URL}Works/Lays/Cover-Lays.jpeg`,   // imagem leve
+    coverVideo:  `${import.meta.env.BASE_URL}Works/Lays/Cover-Lays.mp4`,   // vídeo leve (principal)
+    coverVideoMp4: `${import.meta.env.BASE_URL}Works/Lays/Cover-Lays.mp4`, // fallback p/ Safari antigo (opcional)
     cover: "https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?_gl=1*x0mtfs*_ga*NjA4ODYzODkwLjE3NTY4OTQ3OTk.*_ga_8JE65Q40S6*czE3NTY4OTQ3OTgkbzEkZzEkdDE3NTY4OTQ4NjkkajU5JGwwJGgw", // trophy-ish
     dominant: "#0b0b0b",
     badges: ["Film", "OOH", "Social", "PR"],
-    heroImage: "https://images.unsplash.com/photo-1521417531043-0e1c6f1e3b59?q=80&w=2400&auto=format&fit=crop",
+    heroImage: `${import.meta.env.BASE_URL}Works/Lays/Hero-Lays.png`,
     sections: [
       {
         type: "lede",
@@ -84,7 +88,9 @@ const PROJECTS = [
     title: "TEMPLE WORLD",
     tagline: "An architectural dream rendered like a video game world.",
     year: 2023,
-    cover: "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=1500&auto=format&fit=crop",
+    coverPoster: `${import.meta.env.BASE_URL}Works/Santa_Negocios/Cover_Santa_Negocios.png`,   // imagem leve
+ 
+    cover: `${import.meta.env.BASE_URL}Works/Santa_Negocios/Cover_Santa_Negocios.png`,
     dominant: "#0b1220",
     badges: ["3D", "Design", "Motion"],
     heroImage: "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=2400&auto=format&fit=crop",
@@ -119,6 +125,9 @@ const PROJECTS = [
     title: "NEON SWOOSH",
     tagline: "A kinetic ribbon that paints in RGB.",
     year: 2022,
+    coverPoster: `${import.meta.env.BASE_URL}Works/Jamerson/Cover_Jamerson.mp4`,   // imagem leve
+    coverVideo:  `${import.meta.env.BASE_URL}Works/Jamerson/Cover_Jamerson.mp4`,   // vídeo leve (principal)
+    coverVideoMp4: `${import.meta.env.BASE_URL}Works/Jamerson/Cover_Jamerson.mp4`, // fallback p/ Safari antigo (opcional)
     cover: "https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=1500&auto=format&fit=crop",
     dominant: "#050505",
     badges: ["CG", "Exploration"],
@@ -335,6 +344,32 @@ function useScrollTopOnRoute() {
   }, [pathname]);
 }
 
+function useAutoPlayVideo(shouldPlay = true) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const onIntersect = (entries) => {
+      entries.forEach((entry) => {
+        if (!shouldPlay) return;
+        if (entry.isIntersecting) {
+          el.play().catch(() => {/* silencioso: autoplay pode ser bloqueado */});
+        } else {
+          el.pause();
+        }
+      });
+    };
+
+    const io = new IntersectionObserver(onIntersect, { rootMargin: "100px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [shouldPlay]);
+
+  return ref;
+}
+
 // -----------------------------
 //  Layout
 // -----------------------------
@@ -402,8 +437,9 @@ function Home() {
 }
 
 function WorkCard({ project, index }) {
-  return (
+  const videoRef = useAutoPlayVideo(Boolean(project.coverVideo));
 
+  return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
@@ -411,15 +447,46 @@ function WorkCard({ project, index }) {
       className="group relative overflow-hidden rounded-2xl bg-neutral-900 border border-[#ffffff]/0"
     >
       <Link to={`/work/${project.slug}`} className="block">
-        <div className="aspect-[16/10] w-full overflow-hidden">
-          <img
-            src={project.cover}
-            alt={project.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
+        <div className="relative aspect-[16/10] w-full overflow-hidden">
+          {project.coverVideo ? (
+            <>
+              <video
+                ref={videoRef}
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                poster={project.coverPoster}
+              >
+                {/* ordem importa: webm primeiro, mp4 fallback */}
+                <source src={project.coverVideo} type="video/webm" />
+                {project.coverVideoMp4 && (
+                  <source src={project.coverVideoMp4} type="video/mp4" />
+                )}
+              </video>
+
+              {/* overlay preto com opcaidade que some no hover */}
+              <div className="absolute inset-0 bg-black/40 opacity-100 transition-opacity duration-300 group-hover:opacity-0" />
+            </>
+          ) : (
+            <>
+              <img
+                src={project.cover}
+                alt={project.title}
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/20 opacity-100 transition-opacity duration-300 group-hover:opacity-0" />
+            </>
+          )}
         </div>
-       
+      </Link>
+    </motion.div>
+  );
+}
+
+
 {/* Feature que adiciona uma barra inferior ao WorkCard com informações úteis. (desativado)
  
        <div className="p-4 flex items-center justify-between">
@@ -434,11 +501,6 @@ function WorkCard({ project, index }) {
           </div>
         </div>
 */}
-
-      </Link>
-    </motion.div>
-  );
-}
 
 // -----------------------------
 //  Work Detail Page
@@ -627,11 +689,14 @@ function About() {
 // -----------------------------
 //  App (Router)
 // -----------------------------
+
 export default function App() {
 
+ 
   const [ready, setReady] = useState(false);
 
-  if (!ready) return <Loader onDone={() => setReady(true)} />;
+  
+ if (!ready) return <Loader onDone={() => setReady(true)} />;
   
   return (
       <BrowserRouter basename={import.meta.env.BASE_URL}>

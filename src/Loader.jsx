@@ -1,46 +1,50 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export default function Loader({ onDone, imageUrl = `${import.meta.env.BASE_URL}THIAGO-MATOS.jpeg`}) { 
+export default function Loader({
+  onDone,
+  imageUrl = `${import.meta.env.BASE_URL}THIAGO-MATOS.jpeg`,
+}) {
   const [pct, setPct] = useState(0);
   const [phase, setPhase] = useState("intro"); // intro -> out -> done
+  const timerRef = useRef(null);
 
-  // trava o scroll enquanto o loader está visível (restaura valor anterior ao sair)
+  // trava scroll
   useEffect(() => {
     const prevOverflow = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
-    return () => {
-      document.documentElement.style.overflow = prevOverflow;
-    };
+    return () => { document.documentElement.style.overflow = prevOverflow; };
   }, []);
 
   // contador 0 → 100
   useEffect(() => {
-    const id = setInterval(() => setPct((p) => Math.min(p + 1, 100)), 15);
-    return () => clearInterval(id);
+    timerRef.current = setInterval(() => {
+      setPct((p) => (p >= 100 ? 100 : p + 1));
+    }, 15);
+    return () => clearInterval(timerRef.current);
   }, []);
 
-  // quando atinge 100, troca para a fase de saída (rodam as animações CSS)
-useEffect(() => {
-  if (pct === 100 && phase === "intro") {
-    const hold = setTimeout(() => setPhase("out"), 500);
-    return () => clearTimeout(hold);
-  }
-}, [pct, phase]);
+  // ao atingir 100 na fase "intro": pare o timer e troque para "out"
+  useEffect(() => {
+    if (pct === 100 && phase === "intro") {
+      clearInterval(timerRef.current);
+      const t = setTimeout(() => setPhase("out"), 30);
+      return () => clearTimeout(t);
+    }
+  }, [pct, phase]);
 
-  // quando entra na fase "out", avisa o App depois do tempo da animação
-  // inclui um fallback absoluto para nunca ficar travado (StrictMode, etc.)
+  // fase "out": aguarde animação e finalize
   useEffect(() => {
     if (phase !== "out") return;
 
     const doneTimer = setTimeout(() => {
       setPhase("done");
       onDone?.();
-    }, 1200); // tempo da minha animação de saída
+    }, 1200); // tempo da animação de saída
 
     const bailout = setTimeout(() => {
       setPhase("done");
       onDone?.();
-    }, 5000); // fallback de segurança
+    }, 5000); // fallback
 
     return () => {
       clearTimeout(doneTimer);
@@ -48,7 +52,6 @@ useEffect(() => {
     };
   }, [phase, onDone]);
 
-  // se terminou, desmonta o overlay
   if (phase === "done") return null;
 
   return (
@@ -57,32 +60,40 @@ useEffect(() => {
         {/* linha com nome + sol + sobrenome + porcentagem */}
         <div id="loaderTXT" className="flex gap-1 items-center justify-between w-full">
           <div id="loaderTitle" className="text-[13px] flex gap-1">
-            <p id="name" className={`textIntro ${phase === "out" ? "textOutro delay-400" : ""}`}>
-              THIAGO
-            </p>
-            <div
-              id="symbolSunContainer"
-              className={`textIntro ${phase === "out" ? "textOutro delay-500" : ""}`}
-            >
-              <span id="symbolSun" className="rotateSun inline-block">✳</span>
-            </div>
-            <p
-              id="lastName"
-              className={`textIntro delay-200 ${phase === "out" ? "textOutro delay-600" : ""}`}
-            >
-              MATOS
-            </p>
+            {/* THIAGO (container = máscara fixa; texto anima) */}
+            <span className="inline-block overflow-hidden leading-[1] h-[1em]">
+              <p className={phase === "intro" ? "textIntro" : "textOutro delay-400"}>
+                THIAGO
+              </p>
+            </span>
+
+            {/* ✳ */}
+            <span className="inline-block overflow-hidden leading-[1] h-[1em]">
+              <div className={phase === "intro" ? "textIntro" : "textOutro delay-500"}>
+                <span id="symbolSun" className="rotateSun inline-block">✳</span>
+              </div>
+            </span>
+
+            {/* MATOS */}
+            <span className="inline-block overflow-hidden leading-[1] h-[1em]">
+              <p className={phase === "intro" ? "textIntro delay-200" : "textOutro delay-600"}>
+                MATOS
+              </p>
+            </span>
           </div>
 
+          {/* % */}
           <div id="loaderPercentage" className="flex justify-end w-full">
-            <p
-              id="porcentagem"
-              className={`text-[13px] textIntro delay-200 ${
-                phase === "out" ? "textOutro delay-800" : ""
-              }`}
-            >
-              {pct}%
-            </p>
+            <span className="inline-block overflow-hidden leading-[1] h-[1em]">
+              <p
+                id="porcentagem"
+                className={`text-[13px] ${
+                  phase === "intro" ? "textIntro delay-200" : "textOutro delay-800"
+                }`}
+              >
+                {pct}%
+              </p>
+            </span>
           </div>
         </div>
 
